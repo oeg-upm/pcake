@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Property cake</title>
+
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+            integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+            crossorigin="anonymous"></script>
+
+
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+
+</head>
+
+
+<body>
+<!--<label>Tags</label>-->
+<!--<input id="tags" type="text" class="form-control"/>-->
+
+<form>
+
+<label>Class</label>
+<input id="classes" type="text" class="form-control" name="class"/>
+<label>Property</label>
+<input id="properties" type="text" class="form-control" name="property"/>
+<input type="submit" class="form-control btn btn-warning">
+</form>
+
+<script>
+$( function() {
+    var availableTags = [
+      "ActionScript",
+      "AppleScript",
+      "Asp",
+      "BASIC",
+      "C",
+      "C++",
+      "Clojure",
+      "COBOL",
+      "ColdFusion",
+      "Erlang",
+      "Fortran",
+      "Groovy",
+      "Haskell",
+      "Java",
+      "JavaScript",
+      "Lisp",
+      "Perl",
+      "PHP",
+      "Python",
+      "Ruby",
+      "Scala",
+      "Scheme"
+    ];
+    $( "#tags" ).autocomplete({
+      source: availableTags
+    });
+  } );
+
+function get_list(jclasses){
+        console.log(jclasses);
+        var i,l=[];
+        for(i=0;i<jclasses.length;i++){
+            l.push(jclasses[i]["text"]);
+        }
+        return l;
+    }
+
+  $( "#classes" ).autocomplete({
+
+      source: function(request, response){
+         //console.log($( "#classes" ).val());
+         var request = $.ajax({
+          url: "http://loupe.linkeddata.es/loupe/es/suggestions?dataset=engdbp&s="+$( "#classes" ).val(),
+          method: "GET",
+          dataType: "json"
+        });//ajax
+
+        request.done(function( msg ) {
+            //console.log(msg);
+            response(get_list(msg));
+         });
+
+      }//source
+    });//autocomplete
+
+
+  $( "#properties" ).autocomplete({
+
+      source: function(request, response){
+         var request = $.ajax({
+          url: "http://loupe.linkeddata.es/loupe/es/suggestions/property?dataset=engdbp&s="+$( "#properties" ).val(),
+          method: "GET",
+          dataType: "json"
+        });//ajax
+
+        request.done(function( msg ) {
+            //console.log(msg);
+            response(get_list(msg));
+         });
+
+      }//source
+    });//autocomplete
+
+
+/*
+http://loupe.linkeddata.es/loupe/es/suggestions?dataset=engdbp&s=person
+http://loupe.linkeddata.es/loupe/es/suggestions/property?dataset=engdbp&s=height
+*/
+
+
+
+
+
+</script>
+</body>
+</html>
