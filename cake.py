@@ -1,7 +1,7 @@
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 app = Flask(__name__)
 
 
@@ -12,10 +12,49 @@ def serve():
         property_uri = request.args['property']
         points = get_points(class_uri=class_uri, property_uri=property_uri)
         points = remove_outliers(points)
-        print "points"
-        print points
+        # # print "points"
+        # # print points
+        points_counts, labels = get_dist(points, num_of_splits=10)
+        # print "x y: "
+        # print points_x_y
+        #points_x_y = {'points': [{'y': 97, 'x': 709.65}, {'y': 2, 'x': 709.65}, {'y': 35, 'x': 709.65}, {'y': 3, 'x': 709.65}, {'y': 25, 'x': 709.65}, {'y': 1, 'x': 709.65}, {'y': 4, 'x': 709.65}, {'y': 1, 'x': 709.65}, {'y': 2, 'x': 709.65}, {'y': 1, 'x': 709.65}]}
+
+        #return render_template('distribution_view.html', points=str(points_x_y["points"]))
         #return render_template('distribution_view.html', class_uri=class_uri, property_uri=property_uri)
+        #return render_template('distribution_view.html', points=[20,50,100])
+        label = class_uri.split('/')[-1].split('#')[-1] + " - " + property_uri.split('/')[-1].split('#')[-1]
+        return render_template('distribution_view.html', points=points_counts, labels=labels, label=label)
     return render_template('distribution_view.html')
+
+
+def get_dist(points, num_of_splits=10):
+    counts = [0] * num_of_splits
+    labels = []
+    points.sort()
+    min_val = min(points)
+    max_val = max(points)
+    bucket_size = (max_val - min_val + 1)/num_of_splits
+    for split_id in range(num_of_splits):
+        upper_bound = (split_id+1)*bucket_size + min_val
+        # for i in range(len(points)):
+        #     print "i: "
+        #     print i
+        #     if points[i] < upper_bound:
+        #         counts[split_id] += 1
+        #         points.remove(points[i])
+        #     else:
+        #         break
+        labels.append("%.2f-%.2f" % (round(split_id*bucket_size + min_val, 2), round(upper_bound, 2)))
+        while(len(points)>0 and points[0] < upper_bound):
+            pt = points[0]
+            counts[split_id] += 1
+            points.remove(pt)
+
+    return counts, labels
+    # d = {"points": []}
+    # for i in range(num_of_splits):
+    #     d["points"].append({"y": counts[i], "x": (split_id+0.5)*bucket_size + min_val})
+    # return d
 
 
 def get_points(endpoint="http://dbpedia.org/sparql", class_uri="", property_uri=""):
