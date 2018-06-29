@@ -22,50 +22,25 @@
 
 
 <body>
-<!--<label>Tags</label>-->
-<!--<input id="tags" type="text" class="form-control"/>-->
 
 <form>
 
 <label>Class</label>
-<input id="classes" type="text" class="form-control" name="class"/>
+<input id="classes" type="text" class="form-control" value="{{class_uri}}" name="class"/>
 <label>Property</label>
-<input id="properties" type="text" class="form-control" name="property"/>
-<input type="submit" class="form-control btn btn-warning">
+<input id="properties" type="text" class="form-control" value="{{property_uri}}" name="property"/>
+    <label>Splits</label>
+    {%if splits%}
+        <input type="number" class="form-control" value="{{splits}}" name="num_of_splits"/>
+    {%else%}
+        <input type="number" class="form-control" value="10" name="num_of_splits"/>
+    {%endif%}
+    <input type="submit" class="form-control btn btn-warning">
 </form>
 
 <canvas id="myChart"></canvas>
 
 <script>
-$( function() {
-    var availableTags = [
-      "ActionScript",
-      "AppleScript",
-      "Asp",
-      "BASIC",
-      "C",
-      "C++",
-      "Clojure",
-      "COBOL",
-      "ColdFusion",
-      "Erlang",
-      "Fortran",
-      "Groovy",
-      "Haskell",
-      "Java",
-      "JavaScript",
-      "Lisp",
-      "Perl",
-      "PHP",
-      "Python",
-      "Ruby",
-      "Scala",
-      "Scheme"
-    ];
-    $( "#tags" ).autocomplete({
-      source: availableTags
-    });
-  } );
 
 function get_list(jclasses){
         console.log(jclasses);
@@ -113,11 +88,6 @@ function get_list(jclasses){
     });//autocomplete
 
 
-/*
-http://loupe.linkeddata.es/loupe/es/suggestions?dataset=engdbp&s=person
-http://loupe.linkeddata.es/loupe/es/suggestions/property?dataset=engdbp&s=height
-*/
-
 {%if points%}
 
 var ctx = document.getElementById('myChart').getContext('2d');
@@ -128,17 +98,10 @@ var chart = new Chart(ctx, {
     // The data for our dataset
     data: {
         labels: {{labels|safe}},
-        //labels: [1,2,3],
-        //labels: [12,50,100,700],
         datasets: [{
-            //label: "My First dataset",
             label: "{{label}}",
             borderColor: 'rgb(255, 99, 132)',
             data: {{points}}
-            //data: [{y: 97, x: 700}, {y: 2, x: 100}, {y: 10, x: 12}, {y: 90, x: 50}]
-
-            //data: {{points |safe }},
-            //data: [0, 10, 5, 2, 20, 30, 45],
         }]
     },
 

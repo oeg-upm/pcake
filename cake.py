@@ -7,15 +7,19 @@ app = Flask(__name__)
 
 @app.route("/")
 def serve():
+    num_of_splits = 10
     if 'class' in request.args and 'property' in request.args:
+        if 'num_of_splits' in request.args:
+            num_of_splits = int(request.args['num_of_splits'])
         class_uri = request.args['class']
         property_uri = request.args['property']
         points = get_points(class_uri=class_uri, property_uri=property_uri)
         points = remove_outliers(points)
-        points_counts, labels = get_dist(points, num_of_splits=10)
+        points_counts, labels = get_dist(points, num_of_splits=num_of_splits)
         label = class_uri.split('/')[-1].split('#')[-1] + " - " + property_uri.split('/')[-1].split('#')[-1]
-        return render_template('distribution_view.html', points=points_counts, labels=labels, label=label)
-    return render_template('distribution_view.html')
+        return render_template('distribution_view.html', points=points_counts, labels=labels, label=label,
+                           class_uri=class_uri, property_uri=property_uri, splits=num_of_splits)
+    return render_template('distribution_view.html', splits=num_of_splits)
 
 
 def get_dist(points, num_of_splits=10):
