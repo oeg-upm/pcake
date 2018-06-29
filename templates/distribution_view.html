@@ -30,12 +30,9 @@
 <label>Property</label>
 <input id="properties" type="text" class="form-control" value="{{property_uri}}" name="property"/>
     <label>Splits</label>
-    {%if splits%}
-        <input type="number" class="form-control" value="{{splits}}" name="num_of_splits"/>
-    {%else%}
-        <input type="number" class="form-control" value="10" name="num_of_splits"/>
-    {%endif%}
-    <input type="submit" class="form-control btn btn-warning">
+    <input type="number" class="form-control" value="{{splits}}" name="num_of_splits"/>
+
+    <input type="submit" class="form-control btn btn-danger">
 </form>
 
 <canvas id="myChart"></canvas>
