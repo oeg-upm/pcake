@@ -22,10 +22,8 @@
 
 
 <body>
-
 <a href="/reexpression" class="btn btn-primary">Re-expression</a>
         <a href="/" class="btn btn-danger">Single Distibution</a>
-
 
 <form id="cakeform">
 
@@ -41,9 +39,10 @@
     <!--<option value="squareroot">Square Root</option>-->
 <!--</select>-->
 
+
 <input type="text" class="form-control" name="reexpression"/>
 
-    <input type="submit" class="form-control btn btn-danger">
+    <input type="submit" class="form-control btn btn-primary">
 </form>
 
 <canvas id="myChart"></canvas>
@@ -110,6 +109,11 @@ var chart = new Chart(ctx, {
             label: "{{label}} ({{num_of_points}})",
             borderColor: 'rgb(255, 99, 132)',
             data: {{points}}
+        },
+        {
+            label: "{{label2}} ({{num_of_points}})",
+            borderColor: 'rgb(99,132,255)',
+            data: {{reexpressed}}
         }]
     },
 

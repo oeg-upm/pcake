@@ -8,28 +8,52 @@ app = Flask(__name__)
 
 @app.route("/")
 def serve():
-    num_of_splits = 0
+    num_of_bins = 0
     if 'class' in request.args and 'property' in request.args:
-        if 'num_of_splits' in request.args:
-            num_of_splits = int(request.args['num_of_splits'])
         class_uri = request.args['class']
         property_uri = request.args['property']
         points = get_points(class_uri=class_uri, property_uri=property_uri)
         points = remove_outliers(points)
-        points_counts, labels, num_of_splits = get_dist(points, num_of_splits=num_of_splits)
+        num_of_points = len(points)
+        if 'num_of_bins' in request.args and request.args['num_of_bins'].strip() != '0' and request.args['num_of_bins'].isdigit():
+            num_of_bins = int(request.args['num_of_bins'])
+        else:
+            print("will compute the number of bins")
+            num_of_bins = int(math.ceil(math.sqrt(len(points))))
+        points_counts, labels = get_dist(points, num_of_bins=num_of_bins)
         label = class_uri.split('/')[-1].split('#')[-1] + " - " + property_uri.split('/')[-1].split('#')[-1]
         return render_template('distribution_view.html', points=points_counts, labels=labels, label=label,
-                           class_uri=class_uri, property_uri=property_uri, splits=num_of_splits)
-    return render_template('distribution_view.html', splits=num_of_splits)
+                           class_uri=class_uri, property_uri=property_uri, splits=num_of_bins, num_of_points=num_of_points)
+    return render_template('distribution_view.html', splits=num_of_bins, num_of_points=0)
 
 
-def get_dist(points, num_of_splits=10):
+@app.route("/reexpression")
+def reexpression():
+    num_of_bins = 0
+    if 'class' in request.args and 'property' in request.args:
+        class_uri = request.args['class']
+        property_uri = request.args['property']
+        points = get_points(class_uri=class_uri, property_uri=property_uri)
+        points = remove_outliers(points)
+        reexpressed = [math.sqrt(x) for x in points if x >= 0]
+        num_of_points = len(points)
+        if 'num_of_bins' in request.args and request.args['num_of_bins'].strip() != '0' and request.args['num_of_bins'].isdigit():
+            num_of_bins = int(request.args['num_of_bins'])
+        else:
+            print("will compute the number of bins")
+            num_of_bins = int(math.ceil(math.sqrt(len(points))))
+        points_counts, labels = get_dist(points, num_of_bins=num_of_bins)
+        reexpressed_counts, _ = get_dist(reexpressed, num_of_bins=num_of_bins)
+        label = class_uri.split('/')[-1].split('#')[-1] + " - " + property_uri.split('/')[-1].split('#')[-1]
+        return render_template('reexpression_view.html', points=points_counts, labels=labels, label=label, label2="rexpressed",
+                           class_uri=class_uri, property_uri=property_uri, splits=num_of_bins,
+                               num_of_points=num_of_points, reexpressed=reexpressed_counts)
+    return render_template('reexpression_view.html', splits=num_of_bins, num_of_points=0)
+
+
+def get_dist(points, num_of_bins):
     if len(points) < 1:
         return [], []
-    num_of_bins = num_of_splits
-    if num_of_splits == 0:
-        num_of_bins = int(math.ceil(math.sqrt(len(points))))
-        print("num of bins: "+str(num_of_bins))
 	print("num of points: "+str(len(points)))
     counts = [0] * num_of_bins
     labels = []
@@ -44,7 +68,7 @@ def get_dist(points, num_of_splits=10):
             pt = points[0]
             counts[split_id] += 1
             points.remove(pt)
-    return counts, labels, num_of_bins
+    return counts, labels
 
 
 def get_points(endpoint="http://dbpedia.org/sparql", class_uri="", property_uri=""):
@@ -93,7 +117,8 @@ def remove_outliers(column):
     clean_column = []
     q1 = np.percentile(column, 25)
     q3 = np.percentile(column, 75)
-    k = 1.5
+    #k = 1.5
+    k = 2
     # [Q1 - k(Q3 - Q1), Q3 + k(Q3 - Q1)]
     lower_bound = q1 - k*(q3-q1)
     upper_bound = q3 + k*(q3-q1)
