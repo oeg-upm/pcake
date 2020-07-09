@@ -5,18 +5,26 @@
     <title>Property cake</title>
 
 
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
-            integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
-            crossorigin="anonymous"></script>
 
 
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
+
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+            integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+            crossorigin="anonymous"></script>
+
+
+
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.min.js"></script>
+
+
 
 </head>
 
@@ -33,7 +41,7 @@
 <input id="classes" type="text" class="form-control" value="{{class_uri}}" name="class"/>
 <label>Property</label>
 <input id="properties" type="text" class="form-control" value="{{property_uri}}" name="property"/>
-<label>Bins</label>
+<label>Bins (for {{num_of_points}} datapoints)</label>
 <input type="number" class="form-control" value="{{splits}}" name="num_of_bins"/>
 <!--<label>re-expression</label>-->
 <!--<select name="reexpression" form="cakeform">-->
@@ -41,14 +49,35 @@
     <!--<option value="squareroot">Square Root</option>-->
 <!--</select>-->
 
-<input type="text" class="form-control" name="reexpression"/>
-
+<!--<input type="text" class="form-control" name="reexpression"/>-->
+<div class="form-check">
+    <input type="checkbox" class="form-check-input" name="outliers" id="exampleCheck1" {%if remove_outliers%}checked{%endif%}>
+    <label class="form-check-label" for="exampleCheck1">remove outliers</label>
+  </div>
     <input type="submit" class="form-control btn btn-danger">
 </form>
 
+<br>
+
 <canvas id="myChart"></canvas>
 
+
+<button id="download-btn" type="button" class="form-control btn btn-danger">Download</button>
+
+
 <script>
+
+$('#download-btn').click(function(){
+    var class_uri_1, property_uri;
+    class_uri_1 = $( "#classes" ).val();
+    console.log('class uri: '+class_uri_1);
+    property_uri = $("#properties").val();
+    console.log('property uri: '+property_uri);
+    var download_url = '/download?class='+class_uri_1+'&property='+property_uri
+    window.open(download_url , '_blank');
+
+});
+
 
 function get_list(jclasses){
         console.log(jclasses);

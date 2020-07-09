@@ -2,7 +2,7 @@ import math
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_from_directory
 app = Flask(__name__)
 
 
@@ -13,7 +13,19 @@ def serve():
         class_uri = request.args['class']
         property_uri = request.args['property']
         points = get_points(class_uri=class_uri, property_uri=property_uri)
-        points = remove_outliers(points)
+        remove_out = False
+        if 'outliers' in request.args:
+            print("outlier is here")
+            print(request.args)
+            if request.args['outliers'] == 'on':
+                remove_out = True
+            else:
+                remove_out = False
+        if remove_out:
+            print("Will remove outliers")
+            points = remove_outliers(points)
+        else:
+            print("Won't remove the outliers")
         num_of_points = len(points)
         if 'num_of_bins' in request.args and request.args['num_of_bins'].strip() != '0' and request.args['num_of_bins'].isdigit():
             num_of_bins = int(request.args['num_of_bins'])
@@ -23,8 +35,9 @@ def serve():
         points_counts, labels = get_dist(points, num_of_bins=num_of_bins)
         label = class_uri.split('/')[-1].split('#')[-1] + " - " + property_uri.split('/')[-1].split('#')[-1]
         return render_template('distribution_view.html', points=points_counts, labels=labels, label=label,
-                           class_uri=class_uri, property_uri=property_uri, splits=num_of_bins, num_of_points=num_of_points)
-    return render_template('distribution_view.html', splits=num_of_bins, num_of_points=0)
+                           class_uri=class_uri, property_uri=property_uri, splits=num_of_bins,
+                        num_of_points=num_of_points, remove_outliers=remove_out)
+    return render_template('distribution_view.html', splits=num_of_bins, num_of_points=0, remove_outliers=False)
 
 
 @app.route("/reexpression")
@@ -49,6 +62,29 @@ def reexpression():
                            class_uri=class_uri, property_uri=property_uri, splits=num_of_bins,
                                num_of_points=num_of_points, reexpressed=reexpressed_counts)
     return render_template('reexpression_view.html', splits=num_of_bins, num_of_points=0)
+
+
+@app.route("/download")
+def download_values():
+    fdir = 'downloads'
+    if 'class' in request.args and 'property' in request.args:
+        class_uri = request.args['class']
+        property_uri = request.args['property']
+        points = get_points(class_uri=class_uri, property_uri=property_uri)
+        import os
+        if not os.path.exists(fdir):
+            os.makedirs(fdir)
+        fname = property_uri+" - "+class_uri+".txt"
+        fname = fname.replace('http://','').replace('https://','').replace('/','-')
+        outf_path = os.path.join(fdir, fname)
+        txt = "\n".join([str(p) for p in points])
+        print("out path: <"+outf_path+">")
+        f = open(outf_path, 'w')
+        f.write(txt)
+        f.close()
+        return send_from_directory(directory=fdir, filename=fname, as_attachment=True)
+    else:
+        return "class and/or property are not passed"
 
 
 def get_dist(points, num_of_bins):
