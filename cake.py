@@ -77,12 +77,14 @@ def compare():
         property_uri2 = request.args['property2'].strip()
         endpoint = request.args['endpoint'].strip()
         print("***********\n\n\nThe end points: "+endpoint)
-        # points1 = get_points(endpoint=endpoint, class_uri=class_uri, property_uri=property_uri1)
-        points1 = get_points(class_uri=class_uri, property_uri=property_uri1)
+        points1 = get_points(endpoint=endpoint, class_uri=class_uri, property_uri=property_uri1)
+        # points1 = get_points(class_uri=class_uri, property_uri=property_uri1)
         points1 = remove_outliers(points1)
-        # points2 = get_points(endpoint=endpoint, class_uri=class_uri, property_uri=property_uri2)
-        points2 = get_points(class_uri=class_uri, property_uri=property_uri2)
+        points2 = get_points(endpoint=endpoint, class_uri=class_uri, property_uri=property_uri2)
+        # points2 = get_points(class_uri=class_uri, property_uri=property_uri2)
+        print("points2: "+str(len(points2)))
         points2 = remove_outliers(points2)
+        print("points2 - after outlier removal: "+str(len(points2)))
         num_of_points1 = len(points1)
         num_of_points2 = len(points2)
         if 'num_of_bins' in request.args and request.args['num_of_bins'].strip() != '0' and request.args['num_of_bins'].isdigit():
@@ -95,8 +97,25 @@ def compare():
         points_counts2, _ = get_dist(points2, num_of_bins=num_of_bins, prob=prob)
         label1 = class_uri.split('/')[-1].split('#')[-1] + " - " + property_uri1.split('/')[-1].split('#')[-1]
         label2 = class_uri.split('/')[-1].split('#')[-1] + " - " + property_uri2.split('/')[-1].split('#')[-1]
+        if 'data' in request.args:
+            data = request.args['data'].strip()
+            data = data.split('\n')
+            data = [d.strip() for d in data]
+            data = get_numericals(data)
+            print("numericals: "+str(data))
+            num_of_points3 = len(data)
+            points_counts3, _ = get_dist(data, num_of_bins=num_of_bins, prob=prob)
+            label3 = "data"
+            print("data to be sent: "+str(data))
+            return render_template('compare_view.html', points=points_counts1, labels=labels, label=label1,
+                                   label2=label2,
+                                   class_uri=class_uri, property_uri1=property_uri1, property_uri2=property_uri2,
+                                   splits=num_of_bins, num_of_points2=num_of_points2, num_of_points1=num_of_points1,
+                                   points1=points_counts1, points2=points_counts2, endpoint=endpoint,
+                                   label3=label3, num_of_points3=num_of_points3, points3=points_counts3, data=data
+                                   )
         return render_template('compare_view.html', points=points_counts1, labels=labels, label=label1, label2=label2,
-                           class_uri=class_uri, property_uri1=property_uri1,property_uri2=property_uri2,
+                           class_uri=class_uri, property_uri1=property_uri1, property_uri2=property_uri2,
                             splits=num_of_bins, num_of_points2=num_of_points2, num_of_points1=num_of_points1,
                                points1=points_counts1, points2=points_counts2, endpoint=endpoint)
     return render_template('compare_view.html', splits=num_of_bins, num_of_points1=0, num_of_points2=0, endpoint=default_endpoint)
@@ -134,11 +153,15 @@ def get_dist(points, num_of_bins, prob=False):
     """
     if len(points) < 1:
         return [], []
-	print("num of points: "+str(len(points)))
+
+    print("num of points: "+str(len(points)))
     tot = len(points) * 1.0
     counts = [0] * num_of_bins
     labels = []
-    points.sort()
+    points = sorted(points)
+
+
+    # points.sort()
     min_val = min(points)
     max_val = max(points)
     bucket_size = (max_val - min_val)/num_of_bins
@@ -185,14 +208,19 @@ def get_points(endpoint="http://dbpedia.org/sparql", class_uri="", property_uri=
     #     WHERE {
     #         ?s a <%s>. ?s <%s> ?o
     #     } LIMIT 200""" % (class_uri, property_uri)
-    print "query: "
-    print query
+    print("endpoint: "+endpoint)
+    print("query: ")
+    print(query)
     sparql.setQuery(query)
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
-    print "results: "
+    # print("results: "+str(results))
+    # print "results: "+str(len(results['results']['bindings']))
     vals = [r['o']['value'] for r in results['results']['bindings']]
-    return get_numericals(vals)
+    nums = get_numericals(vals)
+    print("len of results: "+str(len(vals)))
+    print("len of nums: "+str(len(nums)))
+    return nums
 
 
 def get_numericals(column):
@@ -201,10 +229,12 @@ def get_numericals(column):
     :return: list of numeric values
     """
     clean_column = []
-    for c in column:
+    for cc in column:
+        c = cc
         if isinstance(c, (int, float)):
             clean_column.append(c)
         elif isinstance(c, basestring):
+            c = c.strip()
             if '.' in c or ',' in c or c.isdigit():
                 try:
                     clean_column.append(float(c.replace(',', '')))

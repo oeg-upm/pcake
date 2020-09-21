@@ -35,6 +35,10 @@
 <input id="properties1" type="text" class="form-control" value="{{property_uri1}}" name="property1"/>
     <label>Property 2</label>
 <input id="properties2" type="text" class="form-control" value="{{property_uri2}}" name="property2"/>
+        <label>Data (optional) {{points3|length}}</label>
+<textarea id="data" name="data" form="cakeform" class="form-control" placeholder="your data separated by new lines">{%for d in data%}
+{{d}}{%endfor%}</textarea>
+
 <label>Bins</label>
 <input type="number" class="form-control" value="{{splits}}" name="num_of_bins"/>
 
@@ -130,7 +134,15 @@ var chart = new Chart(ctx, {
             label: "{{label2}} ({{num_of_points2}})",
             borderColor: 'rgb(99,132,255)',
             data: {{points2}}
-        }]
+        }
+        {%if points3|length > 0%}
+        ,         {
+            label: "{{label3}} ({{num_of_points3}})",
+            borderColor: '#cc65fe',
+            data: {{points3}}
+        }
+        {%endif%}
+        ]
     },
 
     // Configuration options go here
