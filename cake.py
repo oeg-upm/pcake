@@ -1,9 +1,12 @@
 import math
 from SPARQLWrapper import SPARQLWrapper, JSON
+import six
+import random
+import string
+from flask import Flask, render_template, request, send_from_directory, session
 
-from flask import Flask, render_template, request, send_from_directory
 app = Flask(__name__)
-
+app.secret_key = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 default_endpoint = 'http://dbpedia.org/sparql'
 
 
@@ -95,6 +98,9 @@ def compare():
             num_of_bins = int(math.ceil(math.sqrt(num_of_points)))
         points_counts1, labels = get_dist(points1, num_of_bins=num_of_bins, prob=prob)
         points_counts2, _ = get_dist(points2, num_of_bins=num_of_bins, prob=prob)
+        session['points1'] = points1
+        session['points2'] = points2
+        session['points3'] = []
         label1 = class_uri.split('/')[-1].split('#')[-1] + " - " + property_uri1.split('/')[-1].split('#')[-1]
         label2 = class_uri.split('/')[-1].split('#')[-1] + " - " + property_uri2.split('/')[-1].split('#')[-1]
         if 'data' in request.args:
@@ -105,8 +111,15 @@ def compare():
             print("numericals: "+str(data))
             num_of_points3 = len(data)
             points_counts3, _ = get_dist(data, num_of_bins=num_of_bins, prob=prob)
+            session['points3'] = data
             label3 = "data"
-            print("data to be sent: "+str(data))
+            # print("data to be sent: "+str(data))
+            print("labels: ")
+            print(labels)
+            print("label1: ")
+            print(label1)
+            print("points1: ")
+            print(points1)
             return render_template('compare_view.html', points=points_counts1, labels=labels, label=label1,
                                    label2=label2,
                                    class_uri=class_uri, property_uri1=property_uri1, property_uri2=property_uri2,
@@ -132,7 +145,7 @@ def download_values():
         if not os.path.exists(fdir):
             os.makedirs(fdir)
         fname = property_uri+" - "+class_uri+".txt"
-        fname = fname.replace('http://','').replace('https://','').replace('/','-')
+        fname = fname.replace('http://', '').replace('https://', '').replace('/', '-')
         outf_path = os.path.join(fdir, fname)
         txt = "\n".join([str(p) for p in points])
         print("out path: <"+outf_path+">")
@@ -167,7 +180,10 @@ def get_dist(points, num_of_bins, prob=False):
     bucket_size = (max_val - min_val)/num_of_bins
     for split_id in range(num_of_bins):
         upper_bound = (split_id+1)*bucket_size + min_val
-        labels.append("%.2f-%.2f" % (round(split_id*bucket_size + min_val, 2), round(upper_bound, 2)))
+        first_num_str = human_format(split_id*bucket_size + min_val)
+        second_num_str = human_format(upper_bound)
+        labels.append("%s - %s" % (first_num_str, second_num_str))
+        # labels.append("%.2f-%.2f" % (round(split_id*bucket_size + min_val, 2), round(upper_bound, 2)))
         while(len(points)>0 and points[0] < upper_bound):
             pt = points[0]
             counts[split_id] += 1
@@ -233,7 +249,7 @@ def get_numericals(column):
         c = cc
         if isinstance(c, (int, float)):
             clean_column.append(c)
-        elif isinstance(c, basestring):
+        elif isinstance(c, six.string_types):
             c = c.strip()
             if '.' in c or ',' in c or c.isdigit():
                 try:
@@ -263,6 +279,19 @@ def remove_outliers(column):
         if c >= lower_bound and c <= upper_bound:
             clean_column.append(c)
     return clean_column
+
+
+# source: https://stackoverflow.com/questions/579310/formatting-long-numbers-as-strings-in-python/45846841
+def human_format(number):
+    units = ['', 'K', 'M', 'G', 'T', 'P']
+    k = 1000.0
+    # print("\n\n\n*****************\nnumber: ")
+    # print(number)
+    if number == 0:
+        magnitude = 0
+    else:
+        magnitude = int(math.floor(math.log(number, k)))
+    return '%.2f%s' % (number / k**magnitude, units[magnitude])
 
 
 if __name__ == '__main__':
